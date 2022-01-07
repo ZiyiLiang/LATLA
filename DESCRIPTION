@@ -1,6 +1,6 @@
 Package: LATLA
 Title: LATLA(Locally Adaptive Transfer Learning Algorithms) for Large-Scale Multiple Testing
-Version: 0.0.0.9000
+Version: 0.0.1.0
 Authors@R: 
     person('Ziyi', 'Liang', email = 'ziyilian@usc.edu',
     role=c('aut','cre'))
