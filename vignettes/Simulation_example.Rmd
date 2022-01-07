@@ -1,0 +1,95 @@
+---
+title: "Simulation_example"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulation_example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This Vignette demonstrates the usage of functions in the LATLA package. We will use the network simulation setting 2 presented in the paper as an example.
+
+```{r}
+nrep <- 20        # number of repetitions
+q <- 0.05         # fdr level
+dis.vec <- seq(from=0, to=1, by=0.2) # noise level of the auxiliary data
+np <- length(dis.vec)
+
+m <- 1200     # number of observations
+pis <- rep(0.1, m)   # signal frequencies
+
+# initialize the FDR and power LATLA
+latla.dd.fdr <- rep(0, np)
+latla.dd.etp <- rep(0, np)
+
+latla.dd.fdp <- matrix(rep(0, np*nrep), nrep, np)
+latla.dd.ntp <- matrix(rep(0, np*nrep), nrep, np)
+
+```
+Next, generate the data sets and run both procedures repeatedly.
+
+```{r}
+library(stats)
+library(LATLA)
+
+for (i in 1:nrep){
+  cat("\n", "Network_setting(noise level) iteration i= ", i, "\n", "iteration j=")
+  theta<-rbinom(m, size=1, prob=pis)
+  mu0 <- rep(0,m)     # mean of each index under the null
+  mu1 <- rep(3,m)     # mean of each index under the alternative 
+  sd0 <- rep(1,m)     # sd of each index under the null 
+  sd1 <- rep(1,m)     # sd of each index under the alternative 
+  x0<-rnorm(m, mean=mu0, sd=sd0)
+  x1<-rnorm(m, mean=mu1, sd=sd1)
+  x<-(1-theta)*x0+theta*x1       # generate the primary statistics
+  pv<-2*pnorm(-abs(x), mu0, sd0) # calculate the corresponding p-values
+  
+  for (j in 1:np){
+    cat(j)
+    dis<-dis.vec[j]
+    # generate the distance matrix
+    d_latla<-matrix(rep(0,m*m),m,m)
+    for (k in 1:m) {
+      for (h in min((k+1),m):m) {
+        d_latla[k,h]=(theta[k]==theta[h])*abs(rnorm(1,dis,0.5))+        
+          (theta[k]!=theta[h])*abs(rnorm(1,1,0.5))
+      }
+    }
+    for(k in 2:m) {
+      for (h in 1:(k-1)) {
+        d_latla[k,h]=d_latla[h,k]
+      }
+    }
+    
+    pis_latla<-latla_pis(x, d_latla, pval=pv, tau=0.5)
+    
+    weight<-latla_weights(x,d_latla,pis_latla,mu0,sd0)
+    latla.dd.res<-latla_thres(pvs=pv, pis_latla, ws=weight, q)
+    latla.dd.de<-latla.dd.res$de
+    latla.dd.fdp[i, j]<-sum((1-theta)*latla.dd.de)/max(sum(latla.dd.de), 1)
+    latla.dd.ntp[i, j]<-sum(theta*latla.dd.de)/sum(theta)
+  }
+}
+```
+Evaluate and compare the results
+```{r}
+for (i in 1:np) {
+  
+  latla.dd.fdr[i]<-mean(latla.dd.fdp[,i])
+  latla.dd.etp[i]<-mean(latla.dd.ntp[,i])
+}  
+
+
+matplot(dis.vec, latla.dd.fdr, type="o", lwd=2, main="Network-setting FDR", xlab=expression(mu[2]), ylab="FDR", ylim=c(0.01, 0.10))
+legend("top", c("LATLA.DD"), pch=1:3, col=1:6, lwd=2)
+
+matplot(dis.vec, latla.dd.etp, type="o", lwd=2, main="Network-setting Power", xlab=expression(mu[2]), ylab="ETP")
+
+```

@@ -1,0 +1,20 @@
+Package: LATLA
+Title: LATLA(Locally Adaptive Transfer Learning Algorithms) for Large-Scale Multiple Testing
+Version: 0.0.0.9000
+Authors@R: 
+    person('Ziyi', 'Liang', email = 'ziyilian@usc.edu',
+    role=c('aut','cre'))
+Description: It implements essential functions of the LATLA procedure, which provides
+             a unified framework for large-scale multiple testing with transfer learning,
+             the LATLA procedure is shown to have valid FDR control and substantial power
+             improvement.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Imports: 
+    stats
